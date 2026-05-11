@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OLED Attribute Remover</title>
+    <style>
+      body {
+        width: 320px;
+        margin: 0;
+        padding: 12px;
+        font-family: Arial, sans-serif;
+        box-sizing: border-box;
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: 16px;
+      }
+
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+
+      input {
+        flex: 1;
+        height: 32px;
+        padding: 0 8px;
+        box-sizing: border-box;
+      }
+
+      button {
+        height: 32px;
+        border: 1px solid #bbb;
+        background: #fff;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 10px 0 0;
+        max-height: 220px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+
+      li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+      }
+
+      li:last-child {
+        border-bottom: 0;
+      }
+
+      .site {
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 12px;
+        word-break: break-all;
+      }
+
+      #status {
+        margin-top: 8px;
+        min-height: 18px;
+        font-size: 12px;
+        color: #006400;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Active sites</h1>
+    <div class="row">
+      <input id="siteInput" type="text" placeholder="example.com or *.example.com" />
+      <button id="addButton" type="button">Add</button>
+    </div>
+    <ul id="sitesList"></ul>
+    <div id="status"></div>
+    <script src="popup.js"></script>
+  </body>
+</html>
