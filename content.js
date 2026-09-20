@@ -1,44 +1,15 @@
 "use strict";
 
-function escapeRegex(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
+// Pattern helpers and defaults come from shared.js, injected before this file.
 
-function normalizePattern(rawEntry) {
-  const entry = rawEntry.trim().toLowerCase();
-  if (!entry) {
-    return null;
-  }
+const STYLE_ELEMENT_ID = "oled-attribute-remover-style";
 
-  if (entry.includes("://")) {
-    if (entry.includes("*")) {
-      return entry;
-    }
-    return `${entry.replace(/\/+$/, "")}/*`;
-  }
+let styleElement = null;
+let styleObserver = null;
+let currentCss = "";
+let attributeRemovalStarted = false;
 
-  const host = entry.replace(/^\*\./, "*.");
-  return `*://${host}/*`;
-}
-
-function expandPattern(pattern) {
-  const match = pattern.match(/^\*:\/\/([^/*]+)\/\*$/i);
-  if (!match) {
-    return [pattern];
-  }
-
-  const host = match[1];
-  if (host.includes("*")) {
-    return [pattern];
-  }
-
-  return [pattern, `*://*.${host}/*`];
-}
-
-function matchesPattern(url, pattern) {
-  const regexSource = `^${escapeRegex(pattern).replace(/\\\*/g, ".*")}$`;
-  return new RegExp(regexSource, "i").test(url);
-}
+const currentUrl = matchableUrl(window.location);
 
 function applyOledRemoval() {
   const root = document.documentElement;
@@ -49,18 +20,11 @@ function applyOledRemoval() {
   root.removeAttribute("data-oled");
 }
 
-const currentUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
-
-chrome.storage.sync.get({ enabledSites: [] }, ({ enabledSites }) => {
-  const normalized = enabledSites
-    .filter((entry) => typeof entry === "string")
-    .map((entry) => normalizePattern(entry))
-    .flatMap((pattern) => (pattern ? expandPattern(pattern) : []))
-    .filter(Boolean);
-
-  if (!normalized.some((pattern) => matchesPattern(currentUrl, pattern))) {
+function startAttributeRemoval() {
+  if (attributeRemovalStarted) {
     return;
   }
+  attributeRemovalStarted = true;
 
   applyOledRemoval();
   document.addEventListener("DOMContentLoaded", applyOledRemoval, { once: true });
@@ -80,4 +44,110 @@ chrome.storage.sync.get({ enabledSites: [] }, ({ enabledSites }) => {
       attributeFilter: ["data-oled"]
     });
   }
+}
+
+// Keeps the stylesheet in the document even if the page wipes its container.
+function watchStyleElement() {
+  const parent = styleElement && styleElement.parentNode;
+  if (!parent) {
+    return;
+  }
+
+  if (styleObserver) {
+    styleObserver.disconnect();
+  }
+
+  styleObserver = new MutationObserver(() => {
+    if (currentCss && styleElement && !styleElement.isConnected) {
+      mountStyleElement();
+    }
+  });
+  styleObserver.observe(parent, { childList: true });
+}
+
+function mountStyleElement() {
+  const host = document.head || document.documentElement;
+  if (!host) {
+    return;
+  }
+
+  // Re-appending also moves the element to the end of the head, so page
+  // stylesheets loaded later do not win on source order alone.
+  host.appendChild(styleElement);
+  watchStyleElement();
+}
+
+function applyCss(css) {
+  currentCss = css;
+
+  if (!css) {
+    if (styleObserver) {
+      styleObserver.disconnect();
+      styleObserver = null;
+    }
+    if (styleElement) {
+      styleElement.remove();
+      styleElement = null;
+    }
+    return;
+  }
+
+  if (!styleElement) {
+    styleElement = document.createElement("style");
+    styleElement.id = STYLE_ELEMENT_ID;
+    styleElement.setAttribute("type", "text/css");
+  }
+
+  styleElement.textContent = css;
+
+  if (!styleElement.isConnected) {
+    mountStyleElement();
+  }
+}
+
+function cssForUrl(styleRules) {
+  return styleRules
+    .filter((rule) => rule.enabled && entryMatchesUrl(rule.pattern, currentUrl))
+    .map((rule) => rule.css)
+    .join("\n\n");
+}
+
+function applyStored({ enabledSites, styleRules }) {
+  if (sanitizeSites(enabledSites).some((entry) => entryMatchesUrl(entry, currentUrl))) {
+    startAttributeRemoval();
+  }
+
+  applyCss(cssForUrl(sanitizeStyleRules(styleRules)));
+}
+
+// `null` means the key has never been written; an empty array means the user
+// deliberately removed every rule, so defaults must not come back.
+chrome.storage.sync.get({ enabledSites: [], styleRules: null }, (stored) => {
+  applyStored({
+    enabledSites: stored.enabledSites,
+    styleRules: stored.styleRules === null ? DEFAULT_STYLE_RULES : stored.styleRules
+  });
+
+  // Once the head exists, move the stylesheet into it.
+  document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+      if (currentCss && document.head && styleElement && styleElement.parentNode !== document.head) {
+        mountStyleElement();
+      }
+    },
+    { once: true }
+  );
+});
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "sync") {
+    return;
+  }
+
+  if (!changes.enabledSites && !changes.styleRules) {
+    return;
+  }
+
+  chrome.storage.sync.get({ enabledSites: [], styleRules: [] }, applyStored);
 });

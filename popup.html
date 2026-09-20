@@ -6,7 +6,7 @@
     <title>OLED Attribute Remover</title>
     <style>
       body {
-        width: 320px;
+        width: 340px;
         margin: 0;
         padding: 12px;
         font-family: Arial, sans-serif;
@@ -18,12 +18,20 @@
         font-size: 16px;
       }
 
+      h2 {
+        margin: 18px 0 8px;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #555;
+      }
+
       .row {
         display: flex;
         gap: 8px;
       }
 
-      input {
+      input[type="text"] {
         flex: 1;
         height: 32px;
         padding: 0 8px;
@@ -42,7 +50,7 @@
         list-style: none;
         padding: 0;
         margin: 10px 0 0;
-        max-height: 220px;
+        max-height: 160px;
         overflow-y: auto;
         border: 1px solid #ddd;
         border-radius: 4px;
@@ -62,9 +70,29 @@
       }
 
       .site {
+        flex: 1;
         font-family: Consolas, "Courier New", monospace;
         font-size: 12px;
         word-break: break-all;
+      }
+
+      .site.disabled {
+        color: #999;
+        text-decoration: line-through;
+      }
+
+      li button {
+        height: 26px;
+        font-size: 12px;
+        padding: 0 8px;
+      }
+
+      .footer {
+        margin-top: 12px;
+      }
+
+      .footer button {
+        width: 100%;
       }
 
       #status {
@@ -76,13 +104,27 @@
     </style>
   </head>
   <body>
-    <h1>Active sites</h1>
+    <h1>OLED Attribute Remover</h1>
+
+    <h2>Attribute removal</h2>
     <div class="row">
       <input id="siteInput" type="text" placeholder="example.com or *.example.com" />
       <button id="addButton" type="button">Add</button>
     </div>
     <ul id="sitesList"></ul>
+
+    <h2>Style overrides</h2>
+    <ul id="rulesList"></ul>
+    <div class="footer">
+      <button id="presetButton" type="button" hidden></button>
+    </div>
+
+    <div class="footer">
+      <button id="optionsButton" type="button">Edit style overrides</button>
+    </div>
     <div id="status"></div>
+
+    <script src="shared.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

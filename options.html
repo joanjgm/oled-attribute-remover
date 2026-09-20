@@ -16,17 +16,25 @@
         font-size: 22px;
       }
 
+      h2 {
+        margin-top: 32px;
+        font-size: 18px;
+      }
+
       p {
         margin: 6px 0 14px;
       }
 
       textarea {
         width: 100%;
-        min-height: 260px;
         font-family: Consolas, "Courier New", monospace;
         font-size: 14px;
         padding: 10px;
         box-sizing: border-box;
+      }
+
+      #sites {
+        min-height: 160px;
       }
 
       button {
@@ -35,21 +43,90 @@
         cursor: pointer;
       }
 
+      .rule {
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+
+      .rule-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .rule-header input[type="text"] {
+        flex: 1;
+        height: 30px;
+        padding: 0 8px;
+        font-family: Consolas, "Courier New", monospace;
+        box-sizing: border-box;
+      }
+
+      .rule-header label {
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      .rule-header button {
+        margin-top: 0;
+        padding: 6px 10px;
+      }
+
+      .rule textarea {
+        min-height: 150px;
+      }
+
+      .empty {
+        color: #666;
+        font-style: italic;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 20px;
+      }
+
       #status {
-        margin-left: 10px;
         color: #006400;
       }
     </style>
   </head>
   <body>
-    <h1>Enabled websites</h1>
-    <p>Write one entry per line. Valid examples:</p>
+    <h1>OLED Attribute Remover</h1>
+
+    <h2>Attribute removal</h2>
+    <p>
+      Pages matching these entries get the <code>data-oled</code> attribute stripped from the
+      root element. Write one entry per line. Valid examples:
+    </p>
     <p><code>example.com</code> · <code>*.example.com</code> · <code>*://example.com/*</code></p>
     <textarea id="sites" placeholder="example.com&#10;*.mydomain.com"></textarea>
-    <br />
-    <button id="save">Save</button>
-    <span id="status"></span>
 
+    <h2>Style overrides</h2>
+    <p>
+      Some sites no longer expose an attribute to remove and bake the OLED palette into their
+      stylesheet instead. For those, inject CSS that puts the original colors back. Use
+      <code>!important</code> so the rules win over the page stylesheet, and match the breadth of
+      the site's own selector - a site that redefines its custom properties on every element needs
+      a descendant selector, not just <code>html.dark</code>.
+    </p>
+    <div id="rules"></div>
+    <div class="actions">
+      <button id="addRule" type="button">Add override</button>
+      <span id="presetButtons"></span>
+    </div>
+
+    <div class="actions">
+      <button id="save" type="button">Save</button>
+      <span id="status"></span>
+    </div>
+
+    <script src="shared.js"></script>
     <script src="options.js"></script>
   </body>
 </html>
